@@ -2,8 +2,11 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -64,92 +67,133 @@ fun LibraryScreen(
         if (selectedFilter == null) tracks else tracks.filter { it.format == selectedFilter }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        // Header with title and filter pills
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isWidescreen = maxWidth >= 700.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = if (isWidescreen) 24.dp else 16.dp, vertical = 14.dp)
         ) {
-            Column {
-                Text(
-                    text = "Biblioteca de Música",
-                    color = Color.White,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "${filteredTracks.size} archivos encontrados • Formatos Lossless & Comprimidos",
-                    color = Color(0xFF94A3B8),
-                    fontSize = 13.sp
-                )
-            }
-
-            // Quick Format Filter Chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FormatFilterChip(
-                    label = "Todos",
-                    isSelected = selectedFilter == null,
-                    primaryColor = theme.primaryAccent,
-                    onClick = { selectedFilter = null }
-                )
-
-                AudioFormat.entries.forEach { format ->
-                    FormatFilterChip(
-                        label = format.name,
-                        isSelected = selectedFilter == format,
-                        primaryColor = Color(format.badgeColorHex),
-                        onClick = { selectedFilter = format }
-                    )
-                }
-
-                // Rescan local storage button
-                TvFocusableCard(
-                    onClick = onRescanLocal,
-                    shape = RoundedCornerShape(10.dp),
-                    focusedBorderColor = theme.primaryAccent,
-                    backgroundColor = Color(0xFF1E293B),
-                    modifier = Modifier.height(34.dp)
+            if (isWidescreen) {
+                // TV Widescreen Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "Escanear almacenamiento",
-                            tint = Color.White,
-                            modifier = Modifier.size(14.dp)
+                    Column {
+                        Text(
+                            text = "Biblioteca de Música",
+                            color = Color.White,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Escanear",
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "${filteredTracks.size} pistas • Audio Local & Samba",
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FormatFilterChipsRow(
+                            selectedFilter = selectedFilter,
+                            theme = theme,
+                            onSelectFilter = { selectedFilter = it },
+                            onRescanLocal = onRescanLocal
                         )
                     }
                 }
+            } else {
+                // Mobile Header: Stacked Title + Horizontal Scrollable Chips
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Biblioteca de Música",
+                                color = Color.White,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "${filteredTracks.size} archivos encontrados",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 12.sp
+                            )
+                        }
+
+                        // Compact scan icon button
+                        TvFocusableCard(
+                            onClick = onRescanLocal,
+                            shape = RoundedCornerShape(10.dp),
+                            focusedBorderColor = theme.primaryAccent,
+                            backgroundColor = Color(0xFF1E293B),
+                            modifier = Modifier.height(34.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Escanear",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text("Escanear", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+
+                    // Horizontally scrollable chips on mobile
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FormatFilterChip(
+                            label = "Todos",
+                            isSelected = selectedFilter == null,
+                            primaryColor = theme.primaryAccent,
+                            onClick = { selectedFilter = null }
+                        )
+
+                        AudioFormat.entries.forEach { format ->
+                            FormatFilterChip(
+                                label = format.displayName,
+                                isSelected = selectedFilter == format,
+                                primaryColor = Color(format.badgeColorHex),
+                                onClick = { selectedFilter = format }
+                            )
+                        }
+                    }
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        // Grid of Tracks for TV Remote
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 220.dp),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
+            // Grid of Tracks
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = if (isWidescreen) 200.dp else 150.dp),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
+            ) {
             items(filteredTracks, key = { it.id }) { track ->
                 val isSelected = track.id == currentTrackId
 
@@ -266,6 +310,58 @@ fun LibraryScreen(
                     }
                 }
             }
+        }
+    }
+}
+}
+
+@Composable
+private fun FormatFilterChipsRow(
+    selectedFilter: AudioFormat?,
+    theme: PlayerTheme,
+    onSelectFilter: (AudioFormat?) -> Unit,
+    onRescanLocal: () -> Unit
+) {
+    FormatFilterChip(
+        label = "Todos",
+        isSelected = selectedFilter == null,
+        primaryColor = theme.primaryAccent,
+        onClick = { onSelectFilter(null) }
+    )
+
+    AudioFormat.entries.forEach { format ->
+        FormatFilterChip(
+            label = format.displayName,
+            isSelected = selectedFilter == format,
+            primaryColor = Color(format.badgeColorHex),
+            onClick = { onSelectFilter(format) }
+        )
+    }
+
+    TvFocusableCard(
+        onClick = onRescanLocal,
+        shape = RoundedCornerShape(10.dp),
+        focusedBorderColor = theme.primaryAccent,
+        backgroundColor = Color(0xFF1E293B),
+        modifier = Modifier.height(34.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "Escanear almacenamiento",
+                tint = Color.White,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                text = "Escanear",
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

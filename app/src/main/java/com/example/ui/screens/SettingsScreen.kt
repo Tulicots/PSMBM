@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +45,7 @@ fun SettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Row(
@@ -60,13 +62,13 @@ fun SettingsScreen(
                 Text(
                     text = "Ajustes del Reproductor TV",
                     color = Color.White,
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Rendimiento local, audio hi-fi y temporizador para dormir",
                     color = Color(0xFF94A3B8),
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
             }
         }
@@ -80,7 +82,12 @@ fun SettingsScreen(
             else "Apagado programado de reproducción en la televisión",
             theme = theme
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 listOf(0, 15, 30, 45, 60).forEach { minutes ->
                     val isSelected = currentSleepTimerMinutes == minutes
                     TvFocusableCard(
@@ -116,7 +123,12 @@ fun SettingsScreen(
             description = "Decodificación nativa por hardware para FLAC 24/96, MP3 CBR/VBR, AAC Lossless, WAV y OGG Vorbis.",
             theme = theme
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 listOf("FLAC 24-bit", "MP3 320k", "M4A AAC", "WAV", "OGG").forEach { fmt ->
                     Surface(
                         shape = RoundedCornerShape(8.dp),

@@ -1,5 +1,6 @@
 package com.example
 
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -19,13 +20,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep screen on while playing on TV and optimize window for living room display
+        // Keep screen on while playing and optimize window
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         playerEngine = AudioPlayerEngine(this)
 
         // Preload default sample tracks into playlist
-        playerEngine.setPlaylist(SampleMusicProvider.defaultSampleTracks, startIndex = 0, autoPlay = false)
+        playerEngine.setPlaylist(SampleMusicProvider.getSampleTracks(this), startIndex = 0, autoPlay = false)
 
         setContent {
             MyApplicationTheme(darkTheme = true) {

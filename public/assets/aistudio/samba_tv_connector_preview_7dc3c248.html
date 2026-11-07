@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android TV - Samba IP Keypad</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tvDark: '#0B0F19',
+                        tvCard: '#151C2C',
+                        tvBorder: '#232D42',
+                        tvAccent: '#3B82F6',
+                        tvAccentGlow: '#60A5FA',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* TV D-Pad Focus Highlighting Styles */
+        .focusable {
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            position: relative;
+        }
+
+        .focusable:focus, .focusable.focused {
+            transform: scale(1.06);
+            background-color: #2563EB !important;
+            color: #FFFFFF !important;
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.8), 0 0 5px #60A5FA;
+            border-color: #93C5FD !important;
+            z-index: 20;
+        }
+
+        /* Pulse glow for TV active elements */
+        @keyframes tvPulse {
+            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.9); }
+        }
+
+        .focused-connect {
+            animation: tvPulse 1.5s infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232D42;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-tvDark text-slate-100 font-sans min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-tvAccent selection:text-white">
+
+    <!-- Top Navigation / Status Header -->
+    <header class="w-full px-8 py-4 bg-tvCard/80 backdrop-blur-md border-b border-tvBorder/60 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <i class="fa-solid fa-network-wired text-xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-wide text-white">Configuración de Red Samba (SMB)</h1>
+                <p class="text-xs text-slate-400">Ingreso de dirección IP optimizado para Control Remoto (D-Pad)</p>
+            </div>
+        </div>
+
+        <!-- TV Status Badges -->
+        <div class="flex items-center gap-4 text-xs font-medium">
+            <span class="px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Android TV 65" Mode
+            </span>
+            <span class="text-slate-400 hidden md:inline">
+                <i class="fa-solid fa-gamepad mr-1"></i> Usa las Flechas del teclado para navegar
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Container (16:9 Feel) -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 flex flex-col md:flex-row gap-8 items-center justify-center">
+
+        <!-- Left Column: Output Display & Presets -->
+        <div class="w-full md:w-5/12 flex flex-col gap-6">
+            
+            <!-- Target Server Box -->
+            <div class="bg-tvCard border border-tvBorder rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-[#server] text-blue-400"></i> Servidor Samba Destino
+                    </label>
+                    <span id="charCount" class="text-xs font-mono text-slate-500">0 / 15 chars</span>
+                </div>
+
+                <!-- IP Screen Display -->
+                <div class="bg-tvDark/90 border-2 border-tvBorder rounded-xl p-4 flex items-center justify-between font-mono text-2xl font-bold tracking-widest text-emerald-400 shadow-inner h-16">
+                    <span id="ipDisplay" class="truncate select-none">192.168.1.</span>
+                    <span class="w-3 h-7 bg-emerald-400 animate-bounce rounded-sm inline-block ml-1"></span>
+                </div>
+
+                <!-- Input Action Buttons -->
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <button id="btnClear" tabindex="0" class="focusable bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash-can text-rose-400"></i> Borrar Todo
+                    </button>
+                    <button id="btnConnect" tabindex="0" class="focusable bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-xl text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plug"></i> Conectar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Presets Section -->
+            <div class="bg-tvCard/70 border border-tvBorder/80 rounded-2xl p-5">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-bolt text-amber-400"></i> Presets Rápidos de IP
+                </h3>
+                <div class="grid grid-cols-2 gap-2.5" id="presetsContainer">
+                    <button data-ip="192.168.1.1" tabindex="0" class="focusable preset-btn bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl py-2.5 px-3 font-mono text-sm flex items-center justify-between">
+                        <span>192.168.1.1</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+                    <button data-ip="192.168.1.100" tabindex="0" class="focusable preset-btn bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl py-2.5 px-3 font-mono text-sm flex items-center justify-between">
+                        <span>192.168.1.100</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+                    <button data-ip="192.168.0.1" tabindex="0" class="focusable preset-btn bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl py-2.5 px-3 font-mono text-sm flex items-center justify-between">
+                        <span>192.168.0.1</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+                    <button data-ip="172.16.0.1" tabindex="0" class="focusable preset-btn bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl py-2.5 px-3 font-mono text-sm flex items-center justify-between">
+                        <span>172.16.0.1</span>
+                        <i class="fa-solid fa-chevron-right text-xs text-slate-500"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Connection Log Console -->
+            <div class="bg-black/40 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-400 h-24 overflow-y-auto" id="logConsole">
+                <p class="text-blue-400">[Samba Service] Listo para recibir dirección de red...</p>
+            </div>
+        </div>
+
+        <!-- Right Column: Custom Numeric Keypad -->
+        <div class="w-full md:w-6/12 bg-tvCard border border-tvBorder rounded-3xl p-6 shadow-2xl flex flex-col items-center">
+            
+            <div class="w-full flex items-center justify-between mb-4">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-400"></i> Teclado Numérico Personalizado
+                </span>
+                <span class="text-[11px] bg-slate-800 border border-slate-700 text-slate-300 px-2 py-0.5 rounded">Matriz 3x3 + 0 Central</span>
+            </div>
+
+            <!-- Keypad Grid (Custom Layout requested) -->
+            <!-- 
+               Layout requested:
+               Row 1: [2] [1] [4]
+               Row 2: [7] [0] [5]
+               Row 3: [6] [3] [8]
+               Row 4: [ . ] [9] [ ⌫ ]  (9 placed directly under 3 in the middle)
+            -->
+            <div class="grid grid-cols-3 gap-3.5 w-full max-w-xs" id="keypadGrid">
+                
+                <!-- ROW 1 -->
+                <button data-key="2" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">2</button>
+                <button data-key="1" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">1</button>
+                <button data-key="4" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">4</button>
+
+                <!-- ROW 2 -->
+                <button data-key="7" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">7</button>
+                <button data-key="0" tabindex="0" class="focusable num-key bg-blue-900/40 text-blue-200 font-extrabold text-2xl h-16 rounded-2xl border border-blue-500/40 flex items-center justify-center shadow-md">0</button>
+                <button data-key="5" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">5</button>
+
+                <!-- ROW 3 -->
+                <button data-key="6" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">6</button>
+                <button data-key="3" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">3</button>
+                <button data-key="8" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">8</button>
+
+                <!-- ROW 4: Dot | 9 | Backspace -->
+                <button data-key="." tabindex="0" class="focusable num-key bg-slate-800/90 text-blue-400 font-extrabold text-3xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">.</button>
+                <button data-key="9" tabindex="0" class="focusable num-key bg-slate-800/90 text-white font-bold text-2xl h-16 rounded-2xl border border-slate-700/60 flex items-center justify-center shadow-md">9</button>
+                <button data-key="backspace" tabindex="0" class="focusable num-key bg-rose-950/40 text-rose-400 font-bold text-xl h-16 rounded-2xl border border-rose-800/40 flex items-center justify-center shadow-md">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+
+            </div>
+
+            <!-- Interactive Controller Hint -->
+            <div class="mt-6 text-xs text-slate-400 text-center flex items-center gap-2 bg-slate-900/60 px-4 py-2 rounded-xl border border-slate-800">
+                <i class="fa-solid fa-circle-info text-blue-400"></i>
+                <span>Disposición personalizada activa (0 al centro, 9 inferior central)</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- On-Screen Virtual D-Pad Controller for Easy Touch/Mouse Testing -->
+    <footer class="w-full bg-tvCard/90 border-t border-tvBorder px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="font-semibold text-slate-200">Controlador Simulado:</span>
+            <span>Usa flechas del teclado o los botones a la derecha</span>
+        </div>
+
+        <!-- On-Screen D-Pad buttons -->
+        <div class="flex items-center gap-2">
+            <div class="grid grid-cols-3 gap-1 w-28 h-20 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                <div></div>
+                <button id="dpadUp" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs active:bg-blue-600 active:text-white">▲</button>
+                <div></div>
+                <button id="dpadLeft" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs active:bg-blue-600 active:text-white">◄</button>
+                <button id="dpadSelect" class="bg-blue-600 hover:bg-blue-500 text-white rounded font-bold text-[10px] flex items-center justify-center active:bg-blue-400">OK</button>
+                <button id="dpadRight" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs active:bg-blue-600 active:text-white">►</button>
+                <div></div>
+                <button id="dpadDown" class="bg-slate-800 hover:bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs active:bg-blue-600 active:text-white">▼</button>
+                <div></div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio FX & D-Pad Navigation Engine Script -->
+    <script>
+        // State Management
+        let currentIp = "192.168.1.";
+        const maxIpLength = 15;
+
+        const ipDisplayEl = document.getElementById('ipDisplay');
+        const charCountEl = document.getElementById('charCount');
+        const logConsoleEl = document.getElementById('logConsole');
+
+        // Web Audio API Sound Generator for TV Remote Navigation
+        let audioCtx;
+        function playSound(freq = 440, type = 'sine', duration = 0.05) {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // Audio fallback silence
+            }
+        }
+
+        // Update Screen IP Display
+        function updateDisplay() {
+            ipDisplayEl.textContent = currentIp || "";
+            charCountEl.textContent = `${currentIp.length} / ${maxIpLength} chars`;
+        }
+
+        // Log Messages
+        function addLog(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const p = document.createElement('p');
+            if (type === 'success') p.className = 'text-emerald-400 font-semibold';
+            else if (type === 'error') p.className = 'text-rose-400 font-semibold';
+            else p.className = 'text-blue-300';
+            
+            p.textContent = `[${time}] ${msg}`;
+            logConsoleEl.appendChild(p);
+            logConsoleEl.scrollTop = logConsoleEl.scrollHeight;
+        }
+
+        // Keypad Input Handlers
+        function appendKey(val) {
+            playSound(580, 'sine', 0.04);
+            if (val === 'backspace') {
+                currentIp = currentIp.slice(0, -1);
+            } else {
+                if (currentIp.length < maxIpLength) {
+                    currentIp += val;
+                } else {
+                    playSound(200, 'square', 0.1);
+                    addLog("Límite máximo de caracteres alcanzado", 'error');
+                }
+            }
+            updateDisplay();
+        }
+
+        // Action Handlers
+        document.getElementById('btnClear').addEventListener('click', () => {
+            playSound(300, 'triangle', 0.08);
+            currentIp = "";
+            updateDisplay();
+            addLog("Campo IP limpiado.");
+        });
+
+        document.getElementById('btnConnect').addEventListener('click', () => {
+            playSound(880, 'sine', 0.15);
+            if (!currentIp.trim()) {
+                addLog("Error: Por favor ingresa una dirección IP válida.", "error");
+                return;
+            }
+            addLog(`Iniciando handshake Samba (smb://${currentIp})...`, 'info');
+            setTimeout(() => {
+                addLog(`Conexión exitosa a ${currentIp}:445! Montando compartimentos...`, 'success');
+            }, 700);
+        });
+
+        // Register Button Click Listeners
+        document.querySelectorAll('.num-key').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-key');
+                appendKey(key);
+            });
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playSound(650, 'sine', 0.06);
+                currentIp = btn.getAttribute('data-ip');
+                updateDisplay();
+                addLog(`Preset aplicado: ${currentIp}`);
+            });
+        });
+
+        // -------------------------------------------------------------
+        // TV D-PAD NAVIGATION ENGINE (Spatial Focus Simulation)
+        // -------------------------------------------------------------
+        const focusables = Array.from(document.querySelectorAll('.focusable'));
+        let currentFocusIndex = 0;
+
+        function setFocus(index) {
+            if (index < 0 || index >= focusables.length) return;
+            focusables.forEach(el => el.classList.remove('focused'));
+            currentFocusIndex = index;
+            const target = focusables[currentFocusIndex];
+            target.focus();
+            target.classList.add('focused');
+            playSound(400, 'sine', 0.03); // Focus move sound
+        }
+
+        // Initial Focus on load
+        window.onload = () => {
+            updateDisplay();
+            setFocus(0); // Focus on Clear button or first keypad button
+        };
+
+        // Spatial Navigation Helper (Find closest element in direction)
+        function navigateSpatial(direction) {
+            const currentEl = focusables[currentFocusIndex];
+            const currentRect = currentEl.getBoundingClientRect();
+            const currentCenter = {
+                x: currentRect.left + currentRect.width / 2,
+                y: currentRect.top + currentRect.height / 2
+            };
+
+            let bestMatch = -1;
+            let minDistance = Infinity;
+
+            focusables.forEach((el, index) => {
+                if (index === currentFocusIndex) return;
+                const rect = el.getBoundingClientRect();
+                const center = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                };
+
+                const dx = center.x - currentCenter.x;
+                const dy = center.y - currentCenter.y;
+
+                let isValidDirection = false;
+
+                switch (direction) {
+                    case 'Up':
+                        isValidDirection = dy < -10 && Math.abs(dx) < Math.abs(dy) * 1.5;
+                        break;
+                    case 'Down':
+                        isValidDirection = dy > 10 && Math.abs(dx) < Math.abs(dy) * 1.5;
+                        break;
+                    case 'Left':
+                        isValidDirection = dx < -10 && Math.abs(dy) < Math.abs(dx) * 1.5;
+                        break;
+                    case 'Right':
+                        isValidDirection = dx > 10 && Math.abs(dy) < Math.abs(dx) * 1.5;
+                        break;
+                }
+
+                if (isValidDirection) {
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        bestMatch = index;
+                    }
+                }
+            });
+
+            if (bestMatch !== -1) {
+                setFocus(bestMatch);
+            }
+        }
+
+        // Keyboard Event Listener for TV Remote Keys
+        window.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    navigateSpatial('Up');
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    navigateSpatial('Down');
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    navigateSpatial('Left');
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    navigateSpatial('Right');
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    focusables[currentFocusIndex].click();
+                    break;
+                case 'Backspace':
+                    // Quick physical backspace shortcut
+                    if (document.activeElement.tagName !== 'INPUT') {
+                        e.preventDefault();
+                        appendKey('backspace');
+                    }
+                    break;
+            }
+        });
+
+        // On-screen Virtual D-Pad click bindings
+        document.getElementById('dpadUp').addEventListener('click', () => navigateSpatial('Up'));
+        document.getElementById('dpadDown').addEventListener('click', () => navigateSpatial('Down'));
+        document.getElementById('dpadLeft').addEventListener('click', () => navigateSpatial('Left'));
+        document.getElementById('dpadRight').addEventListener('click', () => navigateSpatial('Right'));
+        document.getElementById('dpadSelect').addEventListener('click', () => focusables[currentFocusIndex].click());
+    </script>
+</body>
+</html>
