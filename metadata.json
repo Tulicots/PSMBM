@@ -1,0 +1,8 @@
+{
+  "name": "Sonora Music TV",
+  "description": "Reproductor de música para Android TV y Google TV con soporte multiformato (MP3, FLAC, M4A) y servidor Samba",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Gradient Background -->
+    <path
+        android:pathData="M0,0h320v180h-320z"
+        android:fillColor="#121626" />
+    <path
+        android:pathData="M0,0h320v180h-320z"
+        android:fillColor="#1E293B" />
+    <!-- Vibrant Glowing Wave / Accent -->
+    <path
+        android:pathData="M0,120 C80,80 140,160 220,100 C270,60 300,90 320,80 L320,180 L0,180 Z"
+        android:fillColor="#6366F1" />
+    <path
+        android:pathData="M0,140 C100,110 180,170 260,130 C290,110 310,125 320,120 L320,180 L0,180 Z"
+        android:fillColor="#818CF8" />
+    <!-- Music Note & TV Waveform Logo -->
+    <!-- Headphone left -->
+    <path
+        android:pathData="M140,75 A25,25 0 0,1 180,75"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <!-- Left ear cup -->
+    <path
+        android:pathData="M136,70 A5,10 0 0,1 144,70 L144,85 A5,10 0 0,1 136,85 Z"
+        android:fillColor="#38BDF8" />
+    <!-- Right ear cup -->
+    <path
+        android:pathData="M176,70 A5,10 0 0,1 184,70 L184,85 A5,10 0 0,1 176,85 Z"
+        android:fillColor="#38BDF8" />
+    <!-- Wave bars in center -->
+    <path
+        android:pathData="M152,78 L152,88 M157,72 L157,92 M163,68 L163,94 M168,75 L168,89"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round" />
+</vector>

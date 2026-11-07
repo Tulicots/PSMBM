@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Sonora Music TV</string>
+    <string name="nav_now_playing">Reproduciendo</string>
+    <string name="nav_library">Mi Biblioteca</string>
+    <string name="nav_samba">Servidor Samba (SMB)</string>
+    <string name="nav_themes">Estilo y Tema</string>
+    <string name="nav_settings">Ajustes TV</string>
+
+    <string name="action_play">Reproducir</string>
+    <string name="action_pause">Pausar</string>
+    <string name="action_previous">Anterior</string>
+    <string name="action_next">Siguiente</string>
+    <string name="action_shuffle">Aleatorio</string>
+    <string name="action_repeat">Repetir</string>
+    <string name="action_rewind">Retroceder 10s</string>
+    <string name="action_fast_forward">Adelantar 10s</string>
+
+    <string name="label_format">Formato</string>
+    <string name="label_bitrate">Bitrate</string>
+    <string name="label_sample_rate">Frecuencia</string>
+
+    <string name="samba_title">Conectar Servidor Samba (SMB)</string>
+    <string name="samba_subtitle">Acceso directo optimizado para control remoto de TV</string>
+    <string name="samba_quick_ip">Teclado numérico rápido para IP</string>
+
+    <string name="tag_flac">FLAC 24-bit Hi-Res</string>
+    <string name="tag_mp3">MP3 320 kbps</string>
+    <string name="tag_m4a">M4A AAC Lossless</string>
+    <string name="tag_wav">WAV Studio Master</string>
+    <string name="tag_ogg">OGG Vorbis</string>
+</resources>
