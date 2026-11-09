@@ -102,4 +102,21 @@ object ProceduralAudioGenerator {
 
         return file
     }
+
+    fun getOrCreateTrackFile(
+        context: Context,
+        fileName: String,
+        frequencyHz: Double = 440.0,
+        durationSeconds: Int = 30,
+        title: String = "Track"
+    ): File {
+        val chords = listOf(
+            listOf(frequencyHz, frequencyHz * 1.25, frequencyHz * 1.5),
+            listOf(frequencyHz * 0.75, frequencyHz, frequencyHz * 1.25),
+            listOf(frequencyHz * 0.89, frequencyHz * 1.12, frequencyHz * 1.33),
+            listOf(frequencyHz, frequencyHz * 1.25, frequencyHz * 1.5)
+        )
+        val cleanName = if (fileName.endsWith(".wav")) fileName else "$fileName.wav"
+        return getOrCreateDemoAudio(context, cleanName, 44100, durationSeconds, chords)
+    }
 }

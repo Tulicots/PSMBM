@@ -39,6 +39,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import com.example.ui.components.TvSimulatorContainer
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -72,9 +73,9 @@ import com.example.ui.screens.ThemesScreen
 enum class TvDestination(val title: String, val icon: ImageVector) {
     NOW_PLAYING("Reproduciendo", Icons.Default.PlayCircle),
     LIBRARY("Biblioteca", Icons.Default.LibraryMusic),
-    SAMBA("Samba SMB", Icons.Default.Router),
     THEMES("Estilo & Tema", Icons.Default.Palette),
-    SETTINGS("Ajustes", Icons.Default.Settings)
+    SETTINGS("Ajustes", Icons.Default.Settings),
+    SAMBA("Samba SMB", Icons.Default.Router)
 }
 
 @Composable
@@ -83,6 +84,7 @@ fun MainTvApp(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     var currentTab by remember { mutableStateOf(TvDestination.NOW_PLAYING) }
     var currentTheme by remember { mutableStateOf(PlayerTheme.OLED_NEON) }
     var isSimulatedTvMode by remember { mutableStateOf(false) }
@@ -90,6 +92,12 @@ fun MainTvApp(
     // Playlist tracks
     var allTracks by remember {
         mutableStateOf(SampleMusicProvider.getSampleTracks(context))
+    }
+
+    // Auto-scan local music on launch every time the app opens
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        val localTracks = com.example.player.LocalMusicScanner.scanAll(context)
+        allTracks = (localTracks + allTracks).distinctBy { it.id }
     }
 
     val playbackState by playerEngine.playbackState.collectAsState()
@@ -181,7 +189,8 @@ fun MainTvApp(
                                 playerEngine = playerEngine,
                                 context = context,
                                 onUpdateTracks = { allTracks = it },
-                                onSelectTheme = { currentTheme = it }
+                                onSelectTheme = { currentTheme = it },
+                                onNavigateToDestination = { currentTab = it }
                             )
                         }
 
@@ -331,7 +340,8 @@ fun MainTvApp(
                                 playerEngine = playerEngine,
                                 context = context,
                                 onUpdateTracks = { allTracks = it },
-                                onSelectTheme = { currentTheme = it }
+                                onSelectTheme = { currentTheme = it },
+                                onNavigateToDestination = { currentTab = it }
                             )
                         }
 
@@ -376,8 +386,11 @@ private fun TvScreensDispatcher(
     playerEngine: AudioPlayerEngine,
     context: android.content.Context,
     onUpdateTracks: (List<AudioTrack>) -> Unit,
-    onSelectTheme: (PlayerTheme) -> Unit
+    onSelectTheme: (PlayerTheme) -> Unit,
+    onNavigateToDestination: (TvDestination) -> Unit
 ) {
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
+
     Crossfade(
         targetState = currentTab,
         label = "tv_screen_crossfade"
@@ -408,17 +421,26 @@ private fun TvScreensDispatcher(
                         playerEngine.playTrack(track)
                     },
                     onRescanLocal = {
-                        val localTracks = SampleMusicProvider.scanLocalTracks(context)
-                        onUpdateTracks((localTracks + SampleMusicProvider.getSampleTracks(context)).distinctBy { it.id })
+                        coroutineScope.launch {
+                            val localTracks = com.example.player.LocalMusicScanner.scanAll(context)
+                            onUpdateTracks((localTracks + allTracks).distinctBy { it.id })
+                        }
                     }
                 )
             }
             TvDestination.SAMBA -> {
                 SambaScreen(
                     theme = currentTheme,
-                    onConnectServer = { server ->
-                        // Connect and add discovered server tracks
-                    }
+                    currentTrackId = playbackState.currentTrack?.id,
+                    isPlaying = playbackState.isPlaying,
+                    onPlayTrack = { track ->
+                        playerEngine.playTrack(track)
+                    },
+                    onAddTracksToLibrary = { newTracks ->
+                        onUpdateTracks((newTracks + allTracks).distinctBy { it.id })
+                    },
+                    onNavigateToNowPlaying = { onNavigateToDestination(TvDestination.NOW_PLAYING) },
+                    onNavigateToLibrary = { onNavigateToDestination(TvDestination.LIBRARY) }
                 )
             }
             TvDestination.THEMES -> {
@@ -431,7 +453,12 @@ private fun TvScreensDispatcher(
                 SettingsScreen(
                     currentSleepTimerMinutes = playbackState.sleepTimerMinutesLeft,
                     onSetSleepTimer = { minutes -> playerEngine.setSleepTimer(minutes) },
-                    theme = currentTheme
+                    theme = currentTheme,
+                    onRescanLocal = suspend {
+                        val localTracks = com.example.player.LocalMusicScanner.scanAll(context)
+                        onUpdateTracks((localTracks + allTracks).distinctBy { it.id })
+                        localTracks.size
+                    }
                 )
             }
         }
