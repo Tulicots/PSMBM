@@ -241,177 +241,96 @@ fun SambaScreen(
                 )
             }
         } else {
-            // VIEW A: SMB CONNECTION SETUP & NUMPAD
-            if (isWidescreen) {
-                // Widescreen TV Layout (Side-by-side)
-                Column(
+            // VIEW A: SMB CONNECTION SETUP & NUMPAD (Native Android TV Widescreen)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 14.dp)
+            ) {
+                SambaHeader()
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp, vertical = 14.dp)
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
-                    SambaHeader(isTvMode = true)
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Row(
+                    // Left Column: Output Display, Presets & Log Console
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Left Column: Output Display, Presets & Log Console
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            TargetServerCard(
-                                hostIp = hostIp,
-                                isConnecting = isConnecting,
-                                cursorAlpha = cursorAlpha,
-                                onClear = {
-                                    hostIp = ""
-                                    addLog("Campo IP limpiado.")
-                                },
-                                onConnect = {
-                                    startConnection(
-                                        hostIp = hostIp,
-                                        shareName = shareName,
-                                        isAnonymous = isAnonymous,
-                                        username = username,
-                                        password = password,
-                                        context = context,
-                                        coroutineScope = coroutineScope,
-                                        onStart = { isConnecting = true },
-                                        onSuccess = { server, items ->
-                                            isConnecting = false
-                                            connectedServer = server
-                                            shareItems = items
-                                            currentPath = "/"
-                                        },
-                                        onError = { isConnecting = false },
-                                        onAddTracksToLibrary = onAddTracksToLibrary,
-                                        addLog = ::addLog
-                                    )
-                                }
-                            )
+                        TargetServerCard(
+                            hostIp = hostIp,
+                            isConnecting = isConnecting,
+                            cursorAlpha = cursorAlpha,
+                            onClear = {
+                                hostIp = ""
+                                addLog("Campo IP limpiado.")
+                            },
+                            onConnect = {
+                                startConnection(
+                                    hostIp = hostIp,
+                                    shareName = shareName,
+                                    isAnonymous = isAnonymous,
+                                    username = username,
+                                    password = password,
+                                    context = context,
+                                    coroutineScope = coroutineScope,
+                                    onStart = { isConnecting = true },
+                                    onSuccess = { server, items ->
+                                        isConnecting = false
+                                        connectedServer = server
+                                        shareItems = items
+                                        currentPath = "/"
+                                    },
+                                    onError = { isConnecting = false },
+                                    onAddTracksToLibrary = onAddTracksToLibrary,
+                                    addLog = ::addLog
+                                )
+                            }
+                        )
 
-                            PresetsCard(
-                                presets = quickPresets,
-                                onSelectPreset = { preset ->
-                                    hostIp = preset
-                                    addLog("Preset aplicado: $preset")
-                                }
-                            )
+                        PresetsCard(
+                            presets = quickPresets,
+                            onSelectPreset = { preset ->
+                                hostIp = preset
+                                addLog("Preset aplicado: $preset")
+                            }
+                        )
 
-                            ShareAndAuthCard(
-                                shareName = shareName,
-                                onShareNameChange = { shareName = it },
-                                isAnonymous = isAnonymous,
-                                onAnonymousChange = { isAnonymous = it },
-                                username = username,
-                                onUsernameChange = { username = it },
-                                password = password,
-                                onPasswordChange = { password = it }
-                            )
+                        ShareAndAuthCard(
+                            shareName = shareName,
+                            onShareNameChange = { shareName = it },
+                            isAnonymous = isAnonymous,
+                            onAnonymousChange = { isAnonymous = it },
+                            username = username,
+                            onUsernameChange = { username = it },
+                            password = password,
+                            onPasswordChange = { password = it }
+                        )
 
-                            LogConsoleCard(logs = logs, modifier = Modifier.weight(1f))
-                        }
-
-                        // Right Column: Custom Numeric Keypad
-                        Column(
-                            modifier = Modifier
-                                .weight(0.95f)
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            TvNumpad(
-                                currentValue = hostIp,
-                                onValueChange = { hostIp = it },
-                                primaryColor = Color(0xFF3B82F6),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        LogConsoleCard(logs = logs, modifier = Modifier.weight(1f))
                     }
-                }
-            } else {
-                // Adaptive Mobile Layout (Single Column Scrollable)
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    SambaHeader(isTvMode = false)
 
-                    TargetServerCard(
-                        hostIp = hostIp,
-                        isConnecting = isConnecting,
-                        cursorAlpha = cursorAlpha,
-                        onClear = {
-                            hostIp = ""
-                            addLog("Campo IP limpiado.")
-                        },
-                        onConnect = {
-                            startConnection(
-                                hostIp = hostIp,
-                                shareName = shareName,
-                                isAnonymous = isAnonymous,
-                                username = username,
-                                password = password,
-                                context = context,
-                                coroutineScope = coroutineScope,
-                                onStart = { isConnecting = true },
-                                onSuccess = { server, items ->
-                                    isConnecting = false
-                                    connectedServer = server
-                                    shareItems = items
-                                    currentPath = "/"
-                                },
-                                onError = { isConnecting = false },
-                                onAddTracksToLibrary = onAddTracksToLibrary,
-                                addLog = ::addLog
-                            )
-                        }
-                    )
-
-                    // Custom Keypad Card
-                    TvNumpad(
-                        currentValue = hostIp,
-                        onValueChange = { hostIp = it },
-                        primaryColor = Color(0xFF3B82F6),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    PresetsCard(
-                        presets = quickPresets,
-                        onSelectPreset = { preset ->
-                            hostIp = preset
-                            addLog("Preset aplicado: $preset")
-                        }
-                    )
-
-                    ShareAndAuthCard(
-                        shareName = shareName,
-                        onShareNameChange = { shareName = it },
-                        isAnonymous = isAnonymous,
-                        onAnonymousChange = { isAnonymous = it },
-                        username = username,
-                        onUsernameChange = { username = it },
-                        password = password,
-                        onPasswordChange = { password = it }
-                    )
-
-                    LogConsoleCard(
-                        logs = logs,
+                    // Right Column: Custom Numeric Keypad
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(130.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
+                            .weight(0.95f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        TvNumpad(
+                            currentValue = hostIp,
+                            onValueChange = { hostIp = it },
+                            primaryColor = Color(0xFF3B82F6),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }
@@ -1018,7 +937,7 @@ private fun SmbFileExplorer(
 }
 
 @Composable
-private fun SambaHeader(isTvMode: Boolean) {
+private fun SambaHeader() {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1052,7 +971,7 @@ private fun SambaHeader(isTvMode: Boolean) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Ingreso de IP optimizado para Control Remoto y Móvil",
+                    text = "Ingreso de IP optimizado para Control Remoto y D-Pad",
                     color = Color(0xFF94A3B8),
                     fontSize = 11.sp
                 )
@@ -1076,7 +995,7 @@ private fun SambaHeader(isTvMode: Boolean) {
                         .background(Color(0xFF34D399))
                 )
                 Text(
-                    text = if (isTvMode) "Android TV Mode" else "Modo Móvil",
+                    text = "Android TV & Google TV",
                     color = Color(0xFFE2E8F0),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
